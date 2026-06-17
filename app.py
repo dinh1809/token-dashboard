@@ -1,53 +1,18 @@
 import streamlit as st
 import requests
-import pandas as pd
-import time
 
-st.set_page_config(page_title="Crypto Tracker", layout="wide")
+st.title('📊 Hermes Agent Token Usage')
+GIST_URL = 'https://gist.githubusercontent.com/dinh1809/175307aff614b51a356f8d1eaca4f826/raw/usage.json'
 
-st.markdown("""
-<style>
-    .stApp { background-color: #0e1117; color: white; }
-</style>
-""", unsafe_allow_html=True)
-
-st.title("🚀 Real-Time Crypto Tracker")
-
-if 'tokens' not in st.session_state:
-    st.session_state.tokens = ['bitcoin', 'ethereum', 'solana']
-
-def get_price(token_ids):
-    url = "https://api.coingecko.com/api/v3/simple/price"
-    params = {'ids': ','.join(token_ids), 'vs_currencies': 'usd'}
+def get_usage():
     try:
-        response = requests.get(url, params=params)
-        response.raise_for_status()
+        response = requests.get(GIST_URL)
         return response.json()
-    except Exception as e:
-        return None
+    except:
+        return {'input': 0, 'output': 0, 'total': 0}
 
-col1, col2 = st.columns([1, 3])
-
-with col1:
-    new_token = st.text_input("Add Token ID").lower()
-    if st.button("Add"):
-        if new_token and new_token not in st.session_state.tokens:
-            st.session_state.tokens.append(new_token)
-    
-    st.subheader("Tracking:")
-    for t in st.session_state.tokens[:]:
-        if st.button(f"Remove {t}", key=f"rm_{t}"):
-            st.session_state.tokens.remove(t)
-            st.rerun()
-
-with col2:
-    data = get_price(st.session_state.tokens)
-    if data:
-        df = pd.DataFrame.from_dict(data, orient='index')
-        df.columns = ['Price (USD)']
-        st.table(df)
-    else:
-        st.error("Data fetch fail.")
-
-if st.button("Refresh"):
-    st.rerun()
+data = get_usage()
+col1, col2, col3 = st.columns(3)
+col1.metric('Input', data.get('input', 0))
+col2.metric('Output', data.get('output', 0))
+col3.metric('Total', data.get('total', 0))
